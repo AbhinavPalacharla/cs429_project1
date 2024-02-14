@@ -19,16 +19,19 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
 
     self->access_counter++;
 
-    if(!write_miss) {
-        for(int i = 0; i < (self->ways - 1); i++) {
-            if((self->lines[(self->ways * index) + i].valid == 1) && (self->lines[(self->ways * index) + i].tag == tag)) {
-                //CACHE HIT
-                // printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
-                self->access_history[(self->ways * index) + i] = self->access_counter;
-                return 1;
-            }
+    // if(!write_miss) {
+    for(int i = 0; i < (self->ways - 1); i++) {
+        if((self->lines[(self->ways * index) + i].valid == 1) && (self->lines[(self->ways * index) + i].tag == tag)) {
+            //CACHE HIT
+            // printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
+            self->access_history[(self->ways * index) + i] = self->access_counter;
+            
+            if(write_miss) { return 0; }
+            
+            return 1;
         }
     }
+    // }
 
     //CACHE MISS
 

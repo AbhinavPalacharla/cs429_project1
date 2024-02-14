@@ -11,12 +11,13 @@ static int mem_access(FullyAssocCache *self, unsigned int address, int write_mis
 
     self->access_counter++;
 
-    if(!write_miss) {
-        for(int i = 0; i < self->num_lines; i++) {
-            if((self->lines[i].valid == 1) && (self->lines[i].tag == tag)) {
-                self->access_history[i] = self->access_counter;
-                return 1;
-            }
+    for(int i = 0; i < self->num_lines; i++) {
+        if((self->lines[i].valid == 1) && (self->lines[i].tag == tag)) {
+            self->access_history[i] = self->access_counter;
+            
+            if(write_miss) {return 0;}
+            
+            return 1;
         }
     }
 

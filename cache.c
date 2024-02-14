@@ -17,9 +17,11 @@ static int mem_access(DirectCache *self, unsigned int address, int write_miss) {
     unsigned int index = address >> num_offset_bits; //get rid of offset bits
     index &= index_mask; //isolate index bits
 
-    if(!write_miss && (self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
+    if((self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
         //CACHE HIT
         // printf("(HIT) ADDR: %X INDEX: %X TAG: %X\n", address, index, tag);
+        if(write_miss) { return 0; }
+        
         return 1;
     }
 

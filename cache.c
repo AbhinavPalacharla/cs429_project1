@@ -5,28 +5,6 @@
 #include <math.h>
 
 static int mem_access(DirectCache *self, unsigned int address, int write_miss) {
-    // unsigned int tag = address >> 10;
-
-    // // unsigned int sec_last_5_mask = 0x3E0;
-    // unsigned int index = (address >> 5) & 0x1F;
-    // // index >>= 5;
-
-    // if(!write_miss && (self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
-    //     //CACHE HIT
-    //     printf("(HIT) ADDR: %X INDEX: %X TAG: %X\n", address, index, tag);
-    //     return 1;
-    // }
-
-    // //CACHE MISS
-    // printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X TAG: %X\n", self->lines[index].tag, address, index, tag);
-    
-    // self->lines[index].valid = 1;
-    // self->lines[index].tag = tag;
-
-
-
-    // return 0;
-
     int num_offset_bits = log2(self->block_size);
     int num_index_bits = log2((self->num_lines));
 
@@ -41,12 +19,12 @@ static int mem_access(DirectCache *self, unsigned int address, int write_miss) {
 
     if(!write_miss && (self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
         //CACHE HIT
-        printf("(HIT) ADDR: %X INDEX: %X TAG: %X\n", address, index, tag);
+        // printf("(HIT) ADDR: %X INDEX: %X TAG: %X\n", address, index, tag);
         return 1;
     }
 
-    //CACHE MISS
-    printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X TAG: %X\n", self->lines[index].tag, address, index, tag);
+    // CACHE MISS
+    // printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X TAG: %X\n", self->lines[index].tag, address, index, tag);
     
     self->lines[index].valid = 1;
     self->lines[index].tag = tag;

@@ -8,7 +8,7 @@
 
 #define TOTAL_SIZE 1024
 #define BLOCK_SIZE 32
-#define SET_ASSOC 1 //1(direct mapped), 2-30(k-way assoc), 32(fully assoc)
+#define SET_ASSOC 2 //1(direct mapped), 2-30(k-way assoc), 32(fully assoc)
 
 
 int main(int argc, char **argv) {
@@ -25,10 +25,10 @@ int main(int argc, char **argv) {
 
     //LOAD ALL OPERATIONS FROM FILE INTO OPERATIONS QUEUE
 
-    DirectCache *i_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
-    DirectCache *d_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
-    // KWayCache *i_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, 2);
-    // KWayCache *d_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, 2);
+    // DirectCache *i_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
+    // DirectCache *d_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
+    KWayCache *i_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
+    KWayCache *d_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
 
     int i_hits = 0; int i_misses = 0;
     int d_hits = 0; int d_misses = 0;
@@ -47,27 +47,27 @@ int main(int argc, char **argv) {
 
         Operation *op = init_op(access_type, strtol(hex, &endptr, 16));
 
-        if(access_type == INSTRUCTION_READ) {
-            if(i_dc->mem_access(i_dc, op->address, 0)) {i_hits++;} else {i_misses++;}
-        } 
-        else if(access_type == DATA_READ) {
-            if(d_dc->mem_access(d_dc, op->address, 0)) {d_hits++;} else {d_misses++;}
-        } 
-        else if(access_type == DATA_WRITE) {
-            d_dc->mem_access(d_dc, op->address, 1);
-            d_misses++;
-        }
-
         // if(access_type == INSTRUCTION_READ) {
-        //     if(i_kwc->mem_access(i_kwc, op->address, 0)) {i_hits++;} else {i_misses++;}
+        //     if(i_dc->mem_access(i_dc, op->address, 0)) {i_hits++;} else {i_misses++;}
         // } 
         // else if(access_type == DATA_READ) {
-        //     if(d_kwc->mem_access(d_kwc, op->address, 0)) {d_hits++;} else {d_misses++;}
+        //     if(d_dc->mem_access(d_dc, op->address, 0)) {d_hits++;} else {d_misses++;}
         // } 
         // else if(access_type == DATA_WRITE) {
-        //     d_kwc->mem_access(d_kwc, op->address, 1);
+        //     d_dc->mem_access(d_dc, op->address, 1);
         //     d_misses++;
         // }
+
+        if(access_type == INSTRUCTION_READ) {
+            if(i_kwc->mem_access(i_kwc, op->address, 0)) {i_hits++;} else {i_misses++;}
+        } 
+        else if(access_type == DATA_READ) {
+            if(d_kwc->mem_access(d_kwc, op->address, 0)) {d_hits++;} else {d_misses++;}
+        } 
+        else if(access_type == DATA_WRITE) {
+            d_kwc->mem_access(d_kwc, op->address, 1);
+            d_misses++;
+        }
 
         free(op);
     }

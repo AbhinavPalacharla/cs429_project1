@@ -8,23 +8,25 @@
 
 static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
     int num_offset_bits = log2(self->block_size);
-    int num_index_bits = log2(self->num_lines / self->ways);
+    int num_index_bits = log2((self->num_lines / self->ways));
 
-    // unsigned int tag = address >> (num_offset_bits + num_index_bits);
-    // unsigned int index = (int) ((address >> num_offset_bits) & num_index_bits);
+    unsigned int tag = address >> (num_offset_bits + num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
 
-    unsigned int tag = address >> (num_offset_bits + num_index_bits);
-    unsigned int mask = (1 << num_index_bits) - 1;
-    unsigned int index = (int) ((address >> num_offset_bits) & mask);
+    unsigned int offset_mask = (1 << num_offset_bits) - 1; //mask to get last num_offset_bits bits
+    unsigned int offset = address & offset_mask;
 
-    self->access_counter += 1;
+    unsigned int index_mask = (1 << num_index_bits) - 1; //mask to get the num_index_bits bits
+    unsigned int index = address >> num_offset_bits; //get rid of offset bits
+    index &= index_mask; //isolate index bits
+
+    self->access_counter++;
 
     if(!write_miss) {
         for(int i = 0; i < (self->ways - 1); i++) {
             if((self->lines[(self->ways * index) + i].valid == 1) && (self->lines[(self->ways * index) + i].tag == tag)) {
                 //CACHE HIT
-                printf("(HIT) ADDR: %X INDEX: %X I: %d TAG: %X\n", address, index, i, tag);
-                self->access_history[i] = self->access_counter;
+                printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
+                self->access_history[(self->ways * index) + i] = self->access_counter;
                 return 1;
             }
         }
@@ -33,23 +35,27 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
     //CACHE MISS
 
     //find victim index or check if valid bit is zero and insert there
-    int minIndex = (self->ways * index);
+    int min_index = (self->ways * index);
+    int access_index = (self->ways * index);
 
     for(int i = 0; i < (self->ways - 1); i++) {
-        if(self->lines[(self->ways * index) + i].valid == 0) {
-            minIndex = i;
+        if(self->lines[access_index].valid == 0) {
+            //found empty line so this is victim
+            min_index = access_index;
             break;
         }
-        if((self->access_history[(self->ways * index) + i]) < (self->access_history[(self->ways * index) + minIndex])) {
-            minIndex = i;
+        if((self->access_history[access_index]) < (self->access_history[min_index])) {
+            min_index = access_index;
         }
+        access_index++;
     }
 
-    printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X I: %d TAG: %X\n", self->lines[(self->ways * index) + minIndex].tag, address, index, minIndex, tag);
+    printf("(MISS) PREV_TAG: %X ADDR: %X TAG: %X\n", self->lines[min_index].tag, address, tag);
 
     //replace victim
-    self->lines[(self->ways * index) + minIndex].valid = 1;
-    self->lines[(self->ways * index) + minIndex].tag = tag;
+    self->lines[min_index].valid = 1;
+    self->lines[min_index].tag = tag;
+    self->access_history[min_index] = self->access_counter;
 
     return 0;
 }

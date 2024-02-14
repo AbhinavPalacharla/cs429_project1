@@ -9,6 +9,9 @@ typedef struct _DirectCacheLine
 
 typedef struct _DirectCache
 {
+    int total_size;
+    int block_size;
+    int num_lines;
     DirectCacheLine *lines;
     int (*mem_access)(struct _DirectCache *self, unsigned int address, int write_miss);
 } DirectCache;

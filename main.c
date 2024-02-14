@@ -1,6 +1,7 @@
 #include "operation.h"
 #include "cache.h"
 #include "k_way_cache.h"
+#include "fully_assoc_cache.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +28,12 @@ int main(int argc, char **argv) {
 
     // DirectCache *i_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
     // DirectCache *d_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
-    KWayCache *i_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
-    KWayCache *d_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
+
+    // KWayCache *i_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
+    // KWayCache *d_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
+
+    FullyAssocCache *i_fac = init_fully_assoc_cache(TOTAL_SIZE, BLOCK_SIZE);
+    FullyAssocCache *d_fac = init_fully_assoc_cache(TOTAL_SIZE, BLOCK_SIZE);
 
     int i_hits = 0; int i_misses = 0;
     int d_hits = 0; int d_misses = 0;
@@ -58,14 +63,25 @@ int main(int argc, char **argv) {
         //     d_misses++;
         // }
 
+        // if(access_type == INSTRUCTION_READ) {
+        //     if(i_kwc->mem_access(i_kwc, op->address, 0)) {i_hits++;} else {i_misses++;}
+        // } 
+        // else if(access_type == DATA_READ) {
+        //     if(d_kwc->mem_access(d_kwc, op->address, 0)) {d_hits++;} else {d_misses++;}
+        // } 
+        // else if(access_type == DATA_WRITE) {
+        //     d_kwc->mem_access(d_kwc, op->address, 1);
+        //     d_misses++;
+        // }
+
         if(access_type == INSTRUCTION_READ) {
-            if(i_kwc->mem_access(i_kwc, op->address, 0)) {i_hits++;} else {i_misses++;}
+            if(i_fac->mem_access(i_fac, op->address, 0)) {i_hits++;} else {i_misses++;}
         } 
         else if(access_type == DATA_READ) {
-            if(d_kwc->mem_access(d_kwc, op->address, 0)) {d_hits++;} else {d_misses++;}
+            if(d_fac->mem_access(d_fac, op->address, 0)) {d_hits++;} else {d_misses++;}
         } 
         else if(access_type == DATA_WRITE) {
-            d_kwc->mem_access(d_kwc, op->address, 1);
+            d_fac->mem_access(d_fac, op->address, 1);
             d_misses++;
         }
 

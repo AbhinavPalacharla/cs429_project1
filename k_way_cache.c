@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define ADDRESS_SIZE 32
-
 static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
     int num_offset_bits = log2(self->block_size);
     int num_index_bits = log2((self->num_lines / self->ways));
@@ -25,7 +23,7 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
         for(int i = 0; i < (self->ways - 1); i++) {
             if((self->lines[(self->ways * index) + i].valid == 1) && (self->lines[(self->ways * index) + i].tag == tag)) {
                 //CACHE HIT
-                printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
+                // printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
                 self->access_history[(self->ways * index) + i] = self->access_counter;
                 return 1;
             }
@@ -50,7 +48,7 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
         access_index++;
     }
 
-    printf("(MISS) PREV_TAG: %X ADDR: %X TAG: %X\n", self->lines[min_index].tag, address, tag);
+    // printf("(MISS) PREV_TAG: %X ADDR: %X TAG: %X\n", self->lines[min_index].tag, address, tag);
 
     //replace victim
     self->lines[min_index].valid = 1;

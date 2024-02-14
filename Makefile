@@ -21,3 +21,6 @@ fully_assoc_cache.o: fully_assoc_cache.c
 
 clean:
 	rm -f *.o a.out
+
+run:
+	python3 driver.py

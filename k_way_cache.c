@@ -34,18 +34,17 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
 
     //find victim index or check if valid bit is zero and insert there
     int min_index = (self->ways * index);
-    int access_index = (self->ways * index);
 
-    for(int i = 0; i < (self->ways - 1); i++) {
-        if(self->lines[access_index].valid == 0) {
+    //loop from start index of set to end index of set
+    for(int i = (self->ways * index); i < (int)((self->ways * index) + (self->ways - 1)); i++) {
+        if(self->lines[i].valid == 0) {
             //found empty line so this is victim
-            min_index = access_index;
+            min_index = i;
             break;
         }
-        if((self->access_history[access_index]) < (self->access_history[min_index])) {
-            min_index = access_index;
+        if((self->access_history[i]) < (self->access_history[min_index])) {
+            min_index = i;
         }
-        access_index++;
     }
 
     // printf("(MISS) PREV_TAG: %X ADDR: %X TAG: %X\n", self->lines[min_index].tag, address, tag);

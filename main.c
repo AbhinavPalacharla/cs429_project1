@@ -6,15 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define TOTAL_SIZE 1024
-#define BLOCK_SIZE 32
-#define SET_ASSOC 2 //1(direct mapped), 2-30(k-way assoc), 32(fully assoc)
+#include <string.h>
 
 
 int main(int argc, char **argv) {
-    if(argc != 2) {
-        printf("ERROR: expected argument trace filename\nFORMAT: ./a.out <trace_file.trace>");
+    if(argc < 2) {
+        printf("EXEC FORMAT: ./a.out <TRACE_FILE.trace (FILE PATH)> <TOTAL CACHE SIZE (INT)> <BLOCK SIZE (INT)> <SET ASSOCIATIVITY (1, 2, 4, 8, 16, 32)>");
         exit(1);
     }
 
@@ -24,22 +21,32 @@ int main(int argc, char **argv) {
         perror("Error opening file");
     }
 
-    //LOAD ALL OPERATIONS FROM FILE INTO OPERATIONS QUEUE
+    int total_cache_size = atoi(argv[2]);
+    int block_size = atoi(argv[3]);
+    int set_assoc = atoi(argv[4]);
 
-    // DirectCache *i_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
-    // DirectCache *d_dc = init_direct_cache(TOTAL_SIZE, BLOCK_SIZE);
+    void *d_cache;
+    void *i_cache;
 
-    // KWayCache *i_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
-    // KWayCache *d_kwc = init_k_way_cache(TOTAL_SIZE, BLOCK_SIZE, SET_ASSOC);
-
-    FullyAssocCache *i_fac = init_fully_assoc_cache(TOTAL_SIZE, BLOCK_SIZE);
-    FullyAssocCache *d_fac = init_fully_assoc_cache(TOTAL_SIZE, BLOCK_SIZE);
+    //initialize cache based on set associativity
+    if(set_assoc == 1) {
+        d_cache = init_direct_cache(total_cache_size, block_size);
+        i_cache = init_direct_cache(total_cache_size, block_size);
+    } else if(set_assoc == 32) {
+        d_cache = init_fully_assoc_cache(total_cache_size, block_size);
+        i_cache = init_fully_assoc_cache(total_cache_size, block_size);
+    } else {
+        d_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
+        i_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
+    }
 
     int i_hits = 0; int i_misses = 0;
     int d_hits = 0; int d_misses = 0;
+    int total_accesses = 0;
 
     size_t len = 128; char *line = malloc(sizeof(char) * len);  ssize_t read;
 
+    //read operations and process them
     while((read = getline(&line, &len, f)) != -1) {
         enum AccessType access_type;
         access_type = atoi(&(line[0]));
@@ -52,36 +59,35 @@ int main(int argc, char **argv) {
 
         Operation *op = init_op(access_type, strtol(hex, &endptr, 16));
 
-        // if(access_type == INSTRUCTION_READ) {
-        //     if(i_dc->mem_access(i_dc, op->address, 0)) {i_hits++;} else {i_misses++;}
-        // } 
-        // else if(access_type == DATA_READ) {
-        //     if(d_dc->mem_access(d_dc, op->address, 0)) {d_hits++;} else {d_misses++;}
-        // } 
-        // else if(access_type == DATA_WRITE) {
-        //     d_dc->mem_access(d_dc, op->address, 1);
-        //     d_misses++;
-        // }
-
-        // if(access_type == INSTRUCTION_READ) {
-        //     if(i_kwc->mem_access(i_kwc, op->address, 0)) {i_hits++;} else {i_misses++;}
-        // } 
-        // else if(access_type == DATA_READ) {
-        //     if(d_kwc->mem_access(d_kwc, op->address, 0)) {d_hits++;} else {d_misses++;}
-        // } 
-        // else if(access_type == DATA_WRITE) {
-        //     d_kwc->mem_access(d_kwc, op->address, 1);
-        //     d_misses++;
-        // }
+        total_accesses++;
 
         if(access_type == INSTRUCTION_READ) {
-            if(i_fac->mem_access(i_fac, op->address, 0)) {i_hits++;} else {i_misses++;}
+            if(set_assoc == 1) {
+                if(((DirectCache *)i_cache)->mem_access(((DirectCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}
+            } else if(set_assoc == 32) {
+                if(((FullyAssocCache *)i_cache)->mem_access(((FullyAssocCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}
+            } else {
+                if(((KWayCache *)i_cache)->mem_access(((KWayCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}   
+            }
         } 
         else if(access_type == DATA_READ) {
-            if(d_fac->mem_access(d_fac, op->address, 0)) {d_hits++;} else {d_misses++;}
+            if(set_assoc == 1) {
+                if(((DirectCache *)d_cache)->mem_access(((DirectCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}
+            } else if(set_assoc == 32) {
+                if(((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}
+            } else {
+                if(((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}   
+            }
         } 
         else if(access_type == DATA_WRITE) {
-            d_fac->mem_access(d_fac, op->address, 1);
+            if(set_assoc == 1) {
+                ((DirectCache *)d_cache)->mem_access(((DirectCache *)d_cache), op->address, 1);
+            } else if(set_assoc == 32) {
+                ((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, 1);
+            } else {
+                ((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 1);   
+            }
+
             d_misses++;
         }
 
@@ -95,12 +101,22 @@ int main(int argc, char **argv) {
     float i_hit_rate = ((float)i_hits / (float)(i_hits + i_misses)) * 100;
     float i_miss_rate = ((float)i_misses / (float)(i_hits + i_misses)) * 100;
 
-    printf("INSTRUCTION CACHE SUMMARY: %d HITS (%f%%), %d MISSES (%f%%)\n", i_hits, i_hit_rate, i_misses, i_miss_rate);
-
     float d_hit_rate = ((float)d_hits / (float)(d_hits + d_misses)) * 100;
     float d_miss_rate = ((float)d_misses / (float)(d_hits + d_misses)) * 100;
 
-    printf("DATA CACHE SUMMARY: %d HITS (%f%%), %d MISSES (%f%%)\n", d_hits, d_hit_rate, d_misses, d_miss_rate);
+    float total_missrate = (float)(i_misses + d_misses) / (float)total_accesses;
+
+    float AMAT = (float) 1 + (float) total_missrate * 100;
+
+    printf("\nSET ASSOCIATIVITY: %d\n\n", set_assoc);
+    
+    printf("INSTRUCTION CACHE HITS: %d (%f%%)\n", i_hits, i_hit_rate);
+    printf("INSTRUCTION CACHE MISSES: %d (%f%%)\n", i_misses, i_miss_rate);
+    printf("DATA CACHE HITS: %d (%f%%)\n", d_hits, d_hit_rate);
+    printf("DATA CACHE MISSES: %d (%f%%)\n", d_misses, d_miss_rate);
+    printf("AMAT: %f\n", AMAT);
+
+    printf("\n");
 
     return 0;
 }

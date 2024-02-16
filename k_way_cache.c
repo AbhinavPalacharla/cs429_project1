@@ -19,12 +19,14 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
 
     self->access_counter++;
 
+    unsigned int start_index = self->ways * index;
+
     // if(!write_miss) {
-    for(int i = 0; i < (self->ways - 1); i++) {
-        if((self->lines[(self->ways * index) + i].valid == 1) && (self->lines[(self->ways * index) + i].tag == tag)) {
+    for(int i = 0; i < self->ways; i++) {
+        if((self->lines[start_index + i].valid == 1) && (self->lines[start_index + i].tag == tag)) {
             //CACHE HIT
             // printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
-            self->access_history[(self->ways * index) + i] = self->access_counter;
+            self->access_history[start_index + i] = self->access_counter;
             
             if(write_miss) { return 0; }
             
@@ -39,7 +41,7 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
     int min_index = (self->ways * index);
 
     //loop from start index of set to end index of set
-    for(int i = (self->ways * index); i < (int)((self->ways * index) + (self->ways - 1)); i++) {
+    for(int i = (self->ways * index); i < (int)((self->ways * index) + self->ways); i++) {
         if(self->lines[i].valid == 0) {
             //found empty line so this is victim
             min_index = i;

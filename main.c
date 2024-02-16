@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
     int block_size = atoi(argv[3]);
     int set_assoc = atoi(argv[4]);
 
+    printf("TOTAL CACHE SIZE: %d | BLOCK SIZE: %d\n", total_cache_size, block_size);
+
     void *d_cache;
     void *i_cache;
 

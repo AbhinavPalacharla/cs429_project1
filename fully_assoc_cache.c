@@ -24,7 +24,7 @@ static int mem_access(FullyAssocCache *self, unsigned int address, int write_mis
     int min_index = 0;
     int min_value = self->access_history[0];
 
-    for(int i = 0; i < (self->num_lines - 1); i++) {
+    for(int i = 0; i < (self->num_lines); i++) {
         if(self->access_history[i] < min_value) {
             min_index = i; min_value = self->access_history[i];
         }

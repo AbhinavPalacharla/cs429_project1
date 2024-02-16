@@ -14,6 +14,8 @@ typedef struct _KWayCache
     int block_size;
     int access_counter;
     int *access_history;
+    int num_offset_bits;
+    int num_index_bits;
     KWayCacheLine *lines;
     int (*mem_access)(struct _KWayCache *self, unsigned int address, int write_miss);
 } KWayCache;

@@ -12,6 +12,7 @@ typedef struct _FullyAssocCache
     int num_lines;
     int block_size;
     int total_size;
+    int num_offset_bits;
     int access_counter;
     int *access_history;
     FullyAssocCacheLine *lines;

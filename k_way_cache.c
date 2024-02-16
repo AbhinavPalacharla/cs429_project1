@@ -5,16 +5,10 @@
 #include <math.h>
 
 static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
-    int num_offset_bits = log2(self->block_size);
-    int num_index_bits = log2((self->num_lines / self->ways));
+    unsigned int tag = address >> (self->num_offset_bits + self->num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
 
-    unsigned int tag = address >> (num_offset_bits + num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
-
-    unsigned int offset_mask = (1 << num_offset_bits) - 1; //mask to get last num_offset_bits bits
-    unsigned int offset = address & offset_mask;
-
-    unsigned int index_mask = (1 << num_index_bits) - 1; //mask to get the num_index_bits bits
-    unsigned int index = address >> num_offset_bits; //get rid of offset bits
+    unsigned int index_mask = (1 << self->num_index_bits) - 1; //mask to get the num_index_bits bits
+    unsigned int index = address >> self->num_offset_bits; //get rid of offset bits
     index &= index_mask; //isolate index bits
 
     self->access_counter++;
@@ -38,17 +32,17 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
     //CACHE MISS
 
     //find victim index or check if valid bit is zero and insert there
-    int min_index = (self->ways * index);
+    int min_index = start_index;
 
     //loop from start index of set to end index of set
-    for(int i = (self->ways * index); i < (int)((self->ways * index) + self->ways); i++) {
-        if(self->lines[i].valid == 0) {
+    for(int i = 0; i < self->ways; i++) {
+        if(self->lines[start_index + i].valid == 0) {
             //found empty line so this is victim
-            min_index = i;
+            min_index = start_index + i;
             break;
         }
-        if((self->access_history[i]) < (self->access_history[min_index])) {
-            min_index = i;
+        if((self->access_history[start_index + i]) < (self->access_history[min_index])) {
+            min_index = start_index + i;
         }
     }
 
@@ -70,6 +64,8 @@ KWayCache *init_k_way_cache(int total_size, int block_size, int ways) {
     kwc->block_size = block_size;
     kwc->access_counter = 0;
     kwc->access_history = malloc(sizeof(int) * kwc->num_lines);
+    kwc->num_offset_bits = log2(block_size);
+    kwc->num_index_bits = log2((kwc->num_lines / ways));
 
     for(int i = 0; i < kwc->num_lines; i++) {
         kwc->access_history[i] = 0;

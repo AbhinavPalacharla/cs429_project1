@@ -5,9 +5,7 @@
 #include <math.h>
 
 static int mem_access(FullyAssocCache *self, unsigned int address, int write_miss) {
-    int num_offset_bits = log2(self->block_size);
-
-    unsigned int tag = address >> num_offset_bits;
+    unsigned int tag = address >> self->num_offset_bits;
 
     self->access_counter++;
 
@@ -44,6 +42,7 @@ FullyAssocCache *init_fully_assoc_cache(int total_size, int block_size) {
     fac->num_lines = total_size / block_size;
     fac->block_size = block_size;
     fac->total_size = total_size;
+    fac->num_offset_bits = log2(block_size);
     fac->access_counter = 0;
     fac->access_history = malloc(sizeof(int) * fac->num_lines);
 

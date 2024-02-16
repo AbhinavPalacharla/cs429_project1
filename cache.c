@@ -5,16 +5,10 @@
 #include <math.h>
 
 static int mem_access(DirectCache *self, unsigned int address, int write_miss) {
-    int num_offset_bits = log2(self->block_size);
-    int num_index_bits = log2((self->num_lines));
+    unsigned int tag = address >> (self->num_offset_bits + self->num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
 
-    unsigned int tag = address >> (num_offset_bits + num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
-
-    unsigned int offset_mask = (1 << num_offset_bits) - 1; //mask to get last num_offset_bits bits
-    unsigned int offset = address & offset_mask;
-
-    unsigned int index_mask = (1 << num_index_bits) - 1; //mask to get the num_index_bits bits
-    unsigned int index = address >> num_offset_bits; //get rid of offset bits
+    unsigned int index_mask = (1 << self->num_index_bits) - 1; //mask to get the num_index_bits bits
+    unsigned int index = address >> self->num_offset_bits; //get rid of offset bits
     index &= index_mask; //isolate index bits
 
     if((self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
@@ -39,8 +33,9 @@ DirectCache *init_direct_cache(int total_size, int block_size) {
 
     dc->total_size = total_size;
     dc->block_size = block_size;
-    // int num_cache_lines = total_size / block_size;
     dc->num_lines = total_size / block_size;
+    dc->num_offset_bits = log2(block_size);
+    dc->num_index_bits = log2((dc->num_lines));
     
     dc->lines = malloc(sizeof(DirectCacheLine) * dc->num_lines);
 

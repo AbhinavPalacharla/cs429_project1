@@ -37,43 +37,6 @@ static enum CacheReturn mem_access (DirectCache *self, unsigned int address, enu
             self->lines[index].dirty = 0;
             return MISS;
         }
-
-        // if(access_type == DATA_WRITE) {
-        //     //if current line is dirty then we need to access main memory to write it back before replacing (effectively a miss)
-        //     if(self->lines[index].dirty == 1) {
-        //         self->lines[index].dirty = 1;
-        //         return MISS;
-        //     }
-
-        //     self->lines[index].dirty = 1;
-
-        //     return HIT;
-        // }
-
-        // self->lines[index].dirty = 0;
-
-        // return MISS;
-
-
-        /*
-        //CLOSE TO EXPECTED VALUE OF HITS
-        if(access_type == DATA_WRITE && self->lines[index].dirty == 0) {
-            return HIT;
-        }
-
-        self->lines[index].dirty = 0;
-        return MISS;
-        */
-
-        // if(self->lines[index].dirty == 0) {
-        //     if(access_type == DATA_WRITE) { self->lines[index].dirty = 1; } else { self->lines[index].dirty = 0; }
-            
-        //     return HIT;
-        // } else {
-        //     if(access_type == DATA_WRITE) { self->lines[index].dirty = 1; } else { self->lines[index].dirty = 0; }
-            
-        //     return MISS;
-        // }
     }
 
     if(self->mode == WRITE_THROUGH) {
@@ -87,49 +50,11 @@ static enum CacheReturn mem_access (DirectCache *self, unsigned int address, enu
         }
 
         // CACHE MISS
-        // printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X TAG: %X\n", self->lines[index].tag, address, index, tag);
-        
         self->lines[index].valid = 1;
         self->lines[index].tag = tag;
 
         return MISS;
     }
-    /*
-    //CACHE HIT
-    if((self->lines[index].valid == 1) && (self->lines[index].tag == tag)) {
-        // printf("(HIT) ADDR: %X INDEX: %X TAG: %X\n", address, index, tag);
-        if(access_type == DATA_WRITE) { 
-            
-            if(self->mode == WRITE_BACK) {
-            //line already in cache so don't need to access main mem, just set dirty bit
-                self->lines[index].dirty = 1;
-            } else {
-                //write through cache so count it as miss
-                return MISS;
-            }
-        }
-        
-        return HIT;
-    }
-
-    // CACHE MISS
-    // printf("(MISS) PREV_TAG: %X ADDR: %X INDEX: %X TAG: %X\n", self->lines[index].tag, address, index, tag);
-    
-    self->lines[index].valid = 1;
-    self->lines[index].tag = tag; //store new tag
-
-    if(self->mode == WRITE_BACK) {
-        if(self->lines[index].dirty == 0) {
-            if(access_type == DATA_WRITE) {self->lines[index].dirty = 1;} else {self->lines[index].dirty = 0;}
-            return HIT;
-        }
-            
-        if(access_type == DATA_WRITE) {self->lines[index].dirty = 1;} else {self->lines[index].dirty = 0;}
-
-    }
-    
-    return MISS;
-    */
 }
 
 DirectCache *init_direct_cache(int total_size, int block_size, enum Mode mode) {

@@ -26,14 +26,16 @@ static enum CacheReturn mem_access (DirectCache *self, unsigned int address, enu
         self->lines[index].tag = tag; //store new tag
 
         if(access_type == DATA_WRITE) {
+            //if old line dirty then we need to write it back to memory (cache miss)
             if(self->lines[index].dirty == 1) {
-                self->lines[index].dirty = 1;
+                self->lines[index].dirty = 1; //because data write new line needs to be dirty=1
                 return MISS;
             }
 
             self->lines[index].dirty = 1;
-            return HIT;
+            return HIT; //old line not dirty so doesn't need to be written back
         } else {
+            //read operation so need to fetch block since not already in cache
             self->lines[index].dirty = 0;
             return MISS;
         }

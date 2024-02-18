@@ -8,6 +8,9 @@ enum AccessType
     INSTRUCTION_READ
 };
 
+enum Mode { WRITE_THROUGH, WRITE_BACK };
+enum CacheReturn {MISS, HIT};
+
 typedef struct _Operation
 {
     enum AccessType access_type;

@@ -3,9 +3,6 @@
 
 #include "operation.h"
 
-enum Mode { WRITE_THROUGH, WRITE_BACK };
-enum CacheReturn {MISS, HIT};
-
 typedef struct _DirectCacheLine
 {
     int valid;

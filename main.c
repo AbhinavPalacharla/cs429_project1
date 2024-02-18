@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
         d_cache = init_direct_cache(total_cache_size, block_size, WRITE_BACK);
         i_cache = init_direct_cache(total_cache_size, block_size, WRITE_THROUGH);
     } else if(set_assoc == 32) {
-        d_cache = init_fully_assoc_cache(total_cache_size, block_size);
-        i_cache = init_fully_assoc_cache(total_cache_size, block_size);
+        d_cache = init_fully_assoc_cache(total_cache_size, block_size, WRITE_BACK);
+        i_cache = init_fully_assoc_cache(total_cache_size, block_size, WRITE_THROUGH);
     } else {
         d_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
         i_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
             if(set_assoc == 1) {
                 if(((DirectCache *)i_cache)->mem_access(((DirectCache *)i_cache), op->address, access_type) == HIT) {i_hits++;} else {i_misses++;}
             } else if(set_assoc == 32) {
-                if(((FullyAssocCache *)i_cache)->mem_access(((FullyAssocCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}
+                if(((FullyAssocCache *)i_cache)->mem_access(((FullyAssocCache *)i_cache), op->address, access_type) == HIT) {i_hits++;} else {i_misses++;}
             } else {
                 if(((KWayCache *)i_cache)->mem_access(((KWayCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}   
             }
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
             if(set_assoc == 1) {
                 if(((DirectCache *)d_cache)->mem_access(((DirectCache *)d_cache), op->address, access_type) == HIT) {d_hits++;} else {d_misses++;}
             } else if(set_assoc == 32) {
-                if(((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}
+                if(((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, access_type) == HIT) {d_hits++;} else {d_misses++;}
             } else {
                 if(((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}   
             }

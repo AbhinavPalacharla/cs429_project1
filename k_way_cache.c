@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
+static enum CacheReturn mem_access(KWayCache *self, unsigned int address, enum AccessType access_type) {
     unsigned int tag = address >> (self->num_offset_bits + self->num_index_bits); //tag is bits leftover in address without offset and index bits so right shift them off
 
     unsigned int index_mask = (1 << self->num_index_bits) - 1; //mask to get the num_index_bits bits
@@ -15,50 +15,104 @@ static int mem_access(KWayCache *self, unsigned int address, int write_miss) {
 
     unsigned int start_index = self->ways * index;
 
-    // if(!write_miss) {
-    for(int i = 0; i < self->ways; i++) {
-        if((self->lines[start_index + i].valid == 1) && (self->lines[start_index + i].tag == tag)) {
-            //CACHE HIT
-            // printf("(HIT) ADDR: %X TAG: %X\n", address, tag);
-            self->access_history[start_index + i] = self->access_counter;
-            
-            if(write_miss) { return 0; }
-            
-            return 1;
+    if(self->mode == WRITE_BACK) {
+        //CHECK IF LINE IN CACHE
+        for(int i = 0; i < self->ways; i++) {
+            if((self->lines[start_index + i].valid == 1) && (self->lines[start_index + i].tag == tag)) {
+                self->access_history[start_index + i] = self->access_counter;
+                
+                if(access_type == DATA_WRITE) {
+                    self->lines[start_index + i].dirty = 1;
+                }
+
+                return HIT;
+            }
+        }
+
+        //LINE NOT IN CACHE
+
+        //find victim index
+        int min_index = start_index;
+
+        //loop from start index of set to end index of set
+        for(int i = 0; i < self->ways; i++) {
+            if(self->lines[start_index + i].valid == 0) {
+                //found empty line so this is victim
+                min_index = start_index + i;
+                break;
+            }
+            if((self->access_history[start_index + i]) < (self->access_history[min_index])) {
+                min_index = start_index + i;
+            }
+        }
+
+        //REPLACE VICTIM
+        self->lines[min_index].valid = 1;
+        self->lines[min_index].tag = tag;
+        self->access_history[min_index] = self->access_counter;
+
+        if(access_type == DATA_WRITE) {
+            //if old line dirty then we need to write it back to memory (cache miss)
+            if(self->lines[min_index].dirty == 1) {
+                self->lines[min_index].dirty = 1; //because data write new line needs to be dirty=1
+                return MISS;
+            }
+
+            self->lines[min_index].dirty = 1;
+            return HIT; //old line not dirty so doesn't need to be written back
+        } else {
+            //read operation so need to fetch block since not already in cache
+            self->lines[min_index].dirty = 0;
+            return MISS;
         }
     }
-    // }
 
-    //CACHE MISS
+    if(self->mode == WRITE_THROUGH) {
 
-    //find victim index or check if valid bit is zero and insert there
-    int min_index = start_index;
-
-    //loop from start index of set to end index of set
-    for(int i = 0; i < self->ways; i++) {
-        if(self->lines[start_index + i].valid == 0) {
-            //found empty line so this is victim
-            min_index = start_index + i;
-            break;
+        //CHECK IF LINE IN CACHE
+        for(int i = 0; i < self->ways; i++) {
+            if((self->lines[start_index + i].valid == 1) && (self->lines[start_index + i].tag == tag)) {
+                self->access_history[start_index + i] = self->access_counter;
+                
+                if(access_type == DATA_WRITE) {
+                    return MISS;
+                } else {
+                    return HIT;
+                }
+            }
         }
-        if((self->access_history[start_index + i]) < (self->access_history[min_index])) {
-            min_index = start_index + i;
+
+        //LINE NOT IN CACHE
+
+        //find victim index or check if valid bit is zero and insert there
+        int min_index = start_index;
+
+        //loop from start index of set to end index of set
+        for(int i = 0; i < self->ways; i++) {
+            if(self->lines[start_index + i].valid == 0) {
+                //found empty line so this is victim
+                min_index = start_index + i;
+                break;
+            }
+            if((self->access_history[start_index + i]) < (self->access_history[min_index])) {
+                min_index = start_index + i;
+            }
         }
+
+        //REPLACE VICTIM
+        self->lines[min_index].valid = 1;
+        self->lines[min_index].tag = tag;
+        self->access_history[min_index] = self->access_counter;
+
+        return MISS;
     }
-
-    // printf("(MISS) PREV_TAG: %X ADDR: %X TAG: %X\n", self->lines[min_index].tag, address, tag);
-
-    //replace victim
-    self->lines[min_index].valid = 1;
-    self->lines[min_index].tag = tag;
-    self->access_history[min_index] = self->access_counter;
-
-    return 0;
+    
 }
 
-KWayCache *init_k_way_cache(int total_size, int block_size, int ways) {
+KWayCache *init_k_way_cache(int total_size, int block_size, int ways, enum Mode mode) {
     KWayCache *kwc = malloc(sizeof(KWayCache));
 
+    kwc->mode = mode;
     kwc->ways = ways;
     kwc->num_lines = total_size / block_size;
     kwc->block_size = block_size;

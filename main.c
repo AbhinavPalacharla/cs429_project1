@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
         d_cache = init_fully_assoc_cache(total_cache_size, block_size, WRITE_BACK);
         i_cache = init_fully_assoc_cache(total_cache_size, block_size, WRITE_THROUGH);
     } else {
-        d_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
-        i_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
+        d_cache = init_k_way_cache(total_cache_size, block_size, set_assoc, WRITE_BACK);
+        i_cache = init_k_way_cache(total_cache_size, block_size, set_assoc, WRITE_THROUGH);
     }
 
     size_t len = 128; char *line = malloc(sizeof(char) * len);  ssize_t read;
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
             } else if(set_assoc == 32) {
                 if(((FullyAssocCache *)i_cache)->mem_access(((FullyAssocCache *)i_cache), op->address, access_type) == HIT) {i_hits++;} else {i_misses++;}
             } else {
-                if(((KWayCache *)i_cache)->mem_access(((KWayCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}   
+                if(((KWayCache *)i_cache)->mem_access(((KWayCache *)i_cache), op->address, access_type) == HIT) {i_hits++;} else {i_misses++;}   
             }
         } else {
             if(set_assoc == 1) {
@@ -77,80 +77,12 @@ int main(int argc, char **argv) {
             } else if(set_assoc == 32) {
                 if(((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, access_type) == HIT) {d_hits++;} else {d_misses++;}
             } else {
-                if(((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}   
+                if(((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, access_type) == HIT) {d_hits++;} else {d_misses++;}   
             }
         }
                 
-
         free(op);
-
     }
-
-    // //initialize cache based on set associativity
-    // if(set_assoc == 1) {
-    //     d_cache = init_direct_cache(total_cache_size, block_size, WRITE_THROUGH);
-    //     i_cache = init_direct_cache(total_cache_size, block_size, WRITE_THROUGH);
-    // } else if(set_assoc == 32) {
-    //     d_cache = init_fully_assoc_cache(total_cache_size, block_size);
-    //     i_cache = init_fully_assoc_cache(total_cache_size, block_size);
-    // } else {
-    //     d_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
-    //     i_cache = init_k_way_cache(total_cache_size, block_size, set_assoc);
-    // }
-
-    // int i_hits = 0; int i_misses = 0;
-    // int d_hits = 0; int d_misses = 0;
-    // int total_accesses = 0;
-
-    // size_t len = 128; char *line = malloc(sizeof(char) * len);  ssize_t read;
-
-    // //read operations and process them
-    // while((read = getline(&line, &len, f)) != -1) {
-    //     enum AccessType access_type;
-    //     access_type = atoi(&(line[0]));
-
-    //     memmove(line, line + 2, strlen(line) - 1);
-    //     line[strlen(line) - 1] = '\0';
-    //     char *hex = line;
-
-    //     char *endptr;
-
-    //     Operation *op = init_op(access_type, strtol(hex, &endptr, 16));
-
-    //     total_accesses++;
-
-    //     if(access_type == INSTRUCTION_READ) {
-    //         if(set_assoc == 1) {
-    //             if(((DirectCache *)i_cache)->mem_access(((DirectCache *)i_cache), op->address, INSTRUCTION_READ) == HIT) {i_hits++;} else {i_misses++;}
-    //         } else if(set_assoc == 32) {
-    //             if(((FullyAssocCache *)i_cache)->mem_access(((FullyAssocCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}
-    //         } else {
-    //             if(((KWayCache *)i_cache)->mem_access(((KWayCache *)i_cache), op->address, 0)) {i_hits++;} else {i_misses++;}   
-    //         }
-    //     } 
-    //     else if(access_type == DATA_READ) {
-    //         if(set_assoc == 1) {
-    //             if(((DirectCache *)d_cache)->mem_access(((DirectCache *)d_cache), op->address, DATA_READ) == HIT) {d_hits++;} else {d_misses++;}
-    //         } else if(set_assoc == 32) {
-    //             if(((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}
-    //         } else {
-    //             if(((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 0)) {d_hits++;} else {d_misses++;}   
-    //         }
-    //     } 
-    //     else if(access_type == DATA_WRITE) {
-    //         if(set_assoc == 1) {
-    //             ((DirectCache *)d_cache)->mem_access(((DirectCache *)d_cache), op->address, DATA_WRITE);
-    //         } else if(set_assoc == 32) {
-    //             ((FullyAssocCache *)d_cache)->mem_access(((FullyAssocCache *)d_cache), op->address, 1);
-    //         } else {
-    //             ((KWayCache *)d_cache)->mem_access(((KWayCache *)d_cache), op->address, 1);   
-    //         }
-
-    //         d_misses++;
-    //     }
-
-    //     free(op);
-    // }
 
     free(line);
 
@@ -172,7 +104,7 @@ int main(int argc, char **argv) {
     printf("INSTRUCTION CACHE MISSES: %d (%f%%)\n", i_misses, i_miss_rate);
     printf("DATA CACHE HITS: %d (%f%%)\n", d_hits, d_hit_rate);
     printf("DATA CACHE MISSES: %d (%f%%)\n", d_misses, d_miss_rate);
-    printf("AMAT: %f\n", AMAT);
+    // printf("AMAT: %f\n", AMAT);
 
     printf("\n");
 
